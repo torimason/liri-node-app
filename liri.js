@@ -4,6 +4,7 @@ var request = require("request");
 var keys = require("./key.js");
 var zipcodes = require("zipcodes");
 var Spotify = require("node-spotify-api");
+var fs = require("fs");
 var weatherKey = keys.openWeatherMap.key;
 var spotifySecret = keys.spotifyKeys.secret;
 var spotifyID = keys.spotifyKeys.id;
@@ -17,6 +18,7 @@ var location = " ";
 var song = " ";
 var movie = "";
 var queryUrl = " ";
+var searchInput = " ";
 
 function whatToDo(){
     inquirer.prompt([
@@ -53,12 +55,14 @@ function weatherSearch(){
     ]).then(function(response){
         zip = response.zipcode;
         zipSearch = zipcodes.lookup(zip);
+        searchInput = "the weather , " + zip + " , ";
         if(zipSearch === undefined){
             console.log(" ");
             console.log("!!===========   ERROR CANNOT PERFORM SEARCH   ===========!!");
             console.log(" ");
             console.log("               **   Try Another ZipCode   **");
             console.log(" ");
+            weatherSearch();
         }
         else{
             city = zipSearch.city;
@@ -87,7 +91,7 @@ function weatherSearch(){
                 console.log("Wind Speed: " + parsedData.wind.speed);
                 console.log("");
                 console.log("------------------------------");
-                searchAgain();
+                logSearch();
             });
         };
     });
@@ -102,31 +106,42 @@ function spotifySearch(){
         }
     ]).then(function(response){
         song = response.songname;
-        var spotify = new Spotify(keys.spotifyKeys);
-        spotify.search({type: "track" , query: song , limit: 1}, function(err, data){
-            if(err){
-                return console.log(" ");
-                console.log("!!===========   ERROR CANNOT PERFORM SEARCH   ===========!!");
-                console.log(" ");
-                console.log("                   **   Try Again   **");
-                console.log(" ");
-            }
-            else{
-                console.log(" ");
-                console.log("......   searching information for " + data.tracks.items[0].name + "   ......");
-                console.log(" ");
-                console.log(" ");
-                console.log("------------------------------");
-                console.log(" ");
-                console.log("Song: " + data.tracks.items[0].name);
-                console.log("Artist: " + data.tracks.items[0].album.artists[0].name);
-                console.log("Album: " + data.tracks.items[0].album.name);
-                console.log("Listen Now: " + data.tracks.items[0].album.external_urls.spotify);
-                console.log(" ");
-                console.log("------------------------------");
-                searchAgain();
-            };
-        });
+        searchInput = "a song , " + song + " , ";
+        if(song === ""){
+            console.log(" ");
+            console.log("!!===========   ERROR   ===========!!");
+            console.log(" ");
+            console.log("  **   Please input song title   **");
+            console.log(" ");
+            spotifySearch();
+        }
+        else{
+            var spotify = new Spotify(keys.spotifyKeys);
+            spotify.search({type: "track" , query: song , limit: 1}, function(err, data){
+                if(err){
+                    return console.log(" ");
+                    console.log("!!===========   ERROR CANNOT PERFORM SEARCH   ===========!!");
+                    console.log(" ");
+                    console.log("                   **   Try Again   **");
+                    console.log(" ");
+                }
+                else{
+                    console.log(" ");
+                    console.log("......   searching information for " + data.tracks.items[0].name + "   ......");
+                    console.log(" ");
+                    console.log(" ");
+                    console.log("------------------------------");
+                    console.log(" ");
+                    console.log("Song: " + data.tracks.items[0].name);
+                    console.log("Artist: " + data.tracks.items[0].album.artists[0].name);
+                    console.log("Album: " + data.tracks.items[0].album.name);
+                    console.log("Listen Now: " + data.tracks.items[0].album.external_urls.spotify);
+                    console.log(" ");
+                    console.log("------------------------------");
+                    logSearch();
+                };
+            });
+        };
     });
 };
 
@@ -139,30 +154,41 @@ function movieSearch(){
         }
     ]).then(function(response){
         movie = response.movieName
-        queryUrl = "http://www.omdbapi.com/?t=" + movie + "&y=&plot=short&apikey=trilogy"
-        request(queryUrl , function(error, response, body){
-            if(!error && response.statusCode === 200) {
-                var parseMovie = JSON.parse(body)
-                console.log(" ");
-                console.log("......   searching information for " + parseMovie.Title + "   ......");
-                console.log(" ");
-                console.log(" ");
-                console.log("------------------------------");
-                console.log("");
-                console.log(parseMovie.Title);
-                console.log("");
-                console.log("Released: " + parseMovie.Released);
-                console.log("IMDB Rating: " + parseMovie.imdbRating);
-                console.log("Rotten Tomatoes Rating: " + parseMovie.Ratings[1].Value);
-                console.log("Produced in: " + parseMovie.Country);
-                console.log("Language: " + parseMovie.Language);
-                console.log("Plot: " + parseMovie.Plot);
-                console.log("Actors: " + parseMovie.Actors);
-                console.log("");
-                console.log("------------------------------");
-                searchAgain();
-            };
-        });
+        searchInput = "a movie , " + movie + " , ";
+        if (movie === ""){
+            console.log(" ");
+            console.log("!!===========   ERROR   ===========!!");
+            console.log(" ");
+            console.log("  **   Please input movie name   **");
+            console.log(" ");
+            movieSearch();
+        }
+        else{
+            queryUrl = "http://www.omdbapi.com/?t=" + movie + "&y=&plot=short&apikey=trilogy"
+            request(queryUrl , function(error, response, body){
+                if(!error && response.statusCode === 200) {
+                    var parseMovie = JSON.parse(body)
+                    console.log(" ");
+                    console.log("......   searching information for " + parseMovie.Title + "   ......");
+                    console.log(" ");
+                    console.log(" ");
+                    console.log("------------------------------");
+                    console.log("");
+                    console.log(parseMovie.Title);
+                    console.log("");
+                    console.log("Released: " + parseMovie.Released);
+                    console.log("IMDB Rating: " + parseMovie.imdbRating);
+                    console.log("Rotten Tomatoes Rating: " + parseMovie.Ratings[1].Value);
+                    console.log("Produced in: " + parseMovie.Country);
+                    console.log("Language: " + parseMovie.Language);
+                    console.log("Plot: " + parseMovie.Plot);
+                    console.log("Actors: " + parseMovie.Actors);
+                    console.log("");
+                    console.log("------------------------------");
+                    logSearch();
+                };
+            });
+        }
     });
 
    
@@ -178,16 +204,42 @@ function searchAgain(){
         }
     ]).then(function(response){
         if(response.again === true){
+            console.log(" ");
+            console.log(" ");
+            console.log("=================   NEW SEARCH   =================");
+            console.log(" ");
+            console.log(" ");
             whatToDo();
         }
         else{
             console.log("   ");
             console.log("===================   GOODBYE   ===================");
             console.log("   ");
-        }
-    })
+        };
+    });
     
-}
+};
+
+function logSearch(){
+    fs.appendFile("log.txt" , searchInput , function(err) {
+
+        // If an error was experienced we will log it.
+        if (err) {
+          console.log(err);
+        }
+      
+        // If no error is experienced, we'll log the phrase "Content Added" to our node console.
+        else {
+            console.log(" ");
+            console.log(" ");
+            console.log("**********   SEARCH LOGGED   **********");
+            console.log(" ");
+            console.log(" ");
+          searchAgain();
+        }
+      
+      });
+};
 
 function liri(){
     console.log("   ");
